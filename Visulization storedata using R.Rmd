@@ -1,0 +1,157 @@
+---
+title: "Portfolio"
+author: "Saurabh Chadda"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+First we are going to make few changes in the dataset like renaming variable and we have already
+corrected the date formart as per our requirement and cleaned the data so, we can move on to the
+graphical representation.
+
+Installing required libraries and correcting the name of variables.
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(lubridate)
+
+store.data=as.data.frame(superstore_data)
+
+store.data%>%
+  dplyr::rename("ship_mode"='Ship Mode',
+                "order_date"="Order Date",
+                "ship_date"='Ship Date'
+                )
+```
+
+## Ship mode analysis
+
+In this step we will try to identify which is the mode prefered shipping mode or most used
+shipping mode by our customers for this I'll be using a barplot.
+
+```{r}
+store.data%>%
+  ggplot(aes(x=`Ship Mode`,fill=`Ship Mode`))+
+  geom_bar()+theme_bw()+
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())+
+  labs(title = "Shipping mode analysis")
+```
+## Sales analysis on yearly basis
+
+In this step we will try to find the total number of orders delivered by the store in each year
+for this we will again use a barplot in a horizontal way by flipping the coordinates.
+
+```{r}
+store.data%>%
+  ggplot(aes(x=year(`Order Date`),fill=year(`Order Date`)))+
+  geom_bar()+coord_flip()+
+  theme_bw()+theme(panel.grid.major = element_blank(),
+                   panel.grid.minor = element_blank())
+```
+## Sales analysis on basis of regions
+
+It's very important for every business to identify the source of major chunk of there customers
+so, then can plan there business policies by keeping all those points in mind which will ultimately benefit the organization.
+
+```{r}
+store.data%>%
+  ggplot(aes(x=Region,fill=Region))+geom_bar()+
+  theme_bw()+theme(panel.grid.major = element_blank(),
+                   panel.grid.minor = element_blank())
+```
+## Product category analysis
+
+In this step we will try to analyse the sales performance of each category of products in a tabular form for this we have to load a library known as knitr.
+
+```{r}
+library(knitr)
+```
+
+```{r}
+Category.analysis=store.data%>%
+  group_by(Category)%>%
+  summarise(total_order=n())%>%
+  arrange(desc(total_order))
+
+kable(Category.analysis)
+```
+## Segment and region analysis
+
+In this step we will try to find out that from each region we are getting how many customers (ie office,home office,consumers) in this graph we will be plotting to categorical variable in a single barplot.
+
+```{r}
+store.data%>%
+  ggplot(aes(x=Region,fill=Segment))+
+  geom_bar(position = "dodge")+
+  theme_bw()+theme(panel.grid.major = element_blank(),
+                   panel.grid.minor = element_blank())
+```
+## Profit analysis by each category of product
+
+In this step we will use a scatter plot for representing the profit with respect to category of product in which the store is dealing in.
+
+```{r}
+store.data%>%
+  ggplot(aes(x=Sales,y=Profit,color=Category))+
+  geom_point()+theme_bw()+
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())+
+  labs(title = "Profit and sales analysis by each category of product")
+  
+```
+## Sales order higher than average sales amount
+
+In this step we will try to fetch the details about the orders which are higher than the average sales amount grouping segment of customers from where we are getting maximum numbers of such orders.
+
+```{r}
+Higher_than_average=store.data%>%
+  filter(Sales>=mean(Sales,na.rm=TRUE))%>%
+  group_by(Segment)%>%
+  summarise(total_orders=n())%>%
+  arrange(desc(total_orders))
+
+kable(Higher_than_average)
+```
+
+## Analysing profit margin
+
+In this step we will try to caluclate the profit margin by deducting the discount out of the gross profit available in the dataset
+
+```{r}
+Profit_margin=store.data%>%
+  group_by(Segment)%>%
+  summarise(profit_margin=sum(Profit)-sum(Discount))
+
+kable(Profit_margin)
+ 
+```
+## Analysing the profit report for the subcategories
+
+```{r}
+Profit_category=store.data%>%
+  group_by(`Sub-Category`)%>%
+  summarise(smallest_sale=min(Sales),
+            average_sales=mean(Sales),
+            Highest_sales=max(Sales))%>%
+  arrange(desc(Highest_sales))
+
+kable(Profit_category)
+```
+## Monthly sales
+
+In this step we will try to fetch the details regarding the total orders received/delivered in each month in all these year to identify is there any trend where there is a increase or decrease in sales.
+
+```{r}
+monthly_count=store.data%>%
+  group_by(month(`Order Date`))%>%
+  select(`Order ID`)%>%
+  count()
+
+kable(monthly_count)
+```
